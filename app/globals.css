@@ -8,7 +8,7 @@
   --background-end-rgb: 255, 255, 255;
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
     --foreground-rgb: 255, 255, 255;
     --background-start-rgb: 0, 0, 0;
@@ -18,12 +18,69 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: white;
+}
+
+h1 {
+  text-align: left;
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+.column-20 h1 {
+  text-align: center;
+}
+
+.container {
+  display: flex;
+  padding: 20px;
+}
+
+.column-20 {
+  flex: 0 0 20%;
+  border-right: 1px solid var(--foreground-rgb);
+  padding: 20px;
+}
+
+.column-20 select, .column-20 button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 5px;
+}
+
+.column-20 button {
+  background-color: rgb(var(--foreground-rgb));
+  color: white;
+  cursor: pointer;
+}
+
+.column-20 button:hover {
+  background-color: rgba(var(--foreground-rgb), 0.8);
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+}
+
+.tile {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #ccc;
+}
+
+.tile.white {
+  background-color: white;
+}
+
+.tile.black {
+  background-color: black;
 }
 
 @layer utilities {
