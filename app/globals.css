@@ -83,6 +83,18 @@ h1 {
   background-color: black;
 }
 
+.tile.red {
+  background-color: red;
+}
+
+.tile.green {
+  background-color: green;
+}
+
+.tile.blue {
+  background-color: #3aabff;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
