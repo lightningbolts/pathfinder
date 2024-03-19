@@ -95,6 +95,10 @@ h1 {
   background-color: #3aabff;
 }
 
+.tile.yellow {
+  background-color: yellow;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
