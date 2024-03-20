@@ -1,5 +1,6 @@
 "use client"
 import React, {useEffect, useState} from 'react';
+import FastPriorityQueue from "fastpriorityqueue";
 const Colors = {
   WHITE: 'white',
   BLACK: 'black',
@@ -97,6 +98,8 @@ function InteractiveGrid() {
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [dragging, setDragging] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [mazeSolver, setMazeSolver] = useState('');
+  const [mazeGenerator, setMazeGenerator] = useState('');
 
   function render() {
     // console.log('Rendering grid');
@@ -138,6 +141,60 @@ function InteractiveGrid() {
     }
     return neighbors;
   }
+
+  const reconstructPath = (cameFrom, current) => {
+    let path = [];
+    for (let at = current; at != null; at = cameFrom[at.row][at.col]) {
+      path.push(at);
+    }
+    path.reverse();
+    return path;
+  }
+
+  const heuristic = (a, b) => {
+    return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
+  }
+
+  const aStarSearch = (grid, start) => {
+    const visited = Array(grid.length).fill().map(() => Array(grid[0].length).fill(false));
+    const cameFrom = Array(grid.length).fill().map(() => Array(grid[0].length).fill(null));
+    const gScore = Array(grid.length).fill().map(() => Array(grid[0].length).fill(Infinity));
+    const fScore = Array(grid.length).fill().map(() => Array(grid[0].length).fill(Infinity));
+    gScore[start.row][start.col] = 0;
+    fScore[start.row][start.col] = heuristic(start, grid[size-3][size-3]);
+    const priorityQueue = new FastPriorityQueue((a, b) => fScore[a.row][a.col] < fScore[b.row][b.col]);
+    priorityQueue.add(start);
+    while (!priorityQueue.isEmpty()) {
+      let currentNode = priorityQueue.poll();
+      if (grid[currentNode.row][currentNode.col].color === Colors.GREEN) {
+        console.log('Found the end tile');
+        let path = reconstructPath(cameFrom, currentNode);
+        // Wait until the path is reconstructed before displaying the yellow nodes
+        setTimeout(() => {
+          for (const node of path) {
+            displayYellowNode(node);
+          }
+        }, 5);
+        return;
+      }
+      for (const neighbor of getNeighbors(grid, currentNode)) {
+        let tentativeGScore = gScore[currentNode.row][currentNode.col] + 1;
+        if (tentativeGScore < gScore[neighbor.row][neighbor.col]) {
+          cameFrom[neighbor.row][neighbor.col] = currentNode;
+          gScore[neighbor.row][neighbor.col] = tentativeGScore;
+          fScore[neighbor.row][neighbor.col] = gScore[neighbor.row][neighbor.col] + heuristic(neighbor, grid[size-3][size-3]);
+          if (!visited[neighbor.row][neighbor.col]) {
+            priorityQueue.add(neighbor);
+            visited[neighbor.row][neighbor.col] = true;
+            // Wait 50ms before displaying the next light blue node
+            setTimeout(() => {
+              displayLightBlueNode(neighbor);
+            }, 5);
+          }
+        }
+      }
+    }
+  }
   const breadthFirstSearch = (grid, start) => {
     let queue = [start];
     let visited = Array(grid.length).fill().map(() => Array(grid[0].length).fill(false));
@@ -147,19 +204,13 @@ function InteractiveGrid() {
       let currentNode = queue.shift();
       if (grid[currentNode.row][currentNode.col].color === Colors.GREEN) {
         console.log('Found the end tile');
-        let path = [];
-        for (let at = currentNode; at != null; at = prev[at.row][at.col]) {
-          path.push(at);
-        }
-        path.reverse();
-        for (const node of path) {
-          if (node.color !== Colors.RED && node.color !== Colors.GREEN && node.color !== Colors.BLACK) {
-            // Wait 50ms before displaying the next light blue node
-            setTimeout(() => {
-              displayYellowNode(node);
-            }, 5);
+        let path = reconstructPath(prev, currentNode);
+        // Wait until the path is reconstructed before displaying the yellow nodes
+        setTimeout(() => {
+          for (const node of path) {
+            displayYellowNode(node);
           }
-        }
+        }, 5);
         return;
       }
       for (const neighbor of getNeighbors(grid, currentNode)) {
@@ -186,20 +237,31 @@ function InteractiveGrid() {
     }
   };
 
+  const checkIfThereIsALightBlueNodeInGrid = (grid) => {
+    for (let i = 0; i < grid.length; i++) {
+      for (let j = 0; j < grid[0].length; j++) {
+        if (grid[i][j].color === Colors.LIGHT_BLUE) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   const handleClick = (rowIndex, colIndex) => {
     if (grid[rowIndex][colIndex].color === Colors.RED || grid[rowIndex][colIndex].color === Colors.GREEN) {
       // Do not allow toggling the start and end tiles
       return;
     }
-    if (!isRunning && (grid[rowIndex][colIndex].color === Colors.LIGHT_BLUE || grid[rowIndex][colIndex].color === Colors.YELLOW)) {
-      // If the algorithm is not running and the clicked tile is light blue or yellow, set it back to white
-      setGrid(prevGrid => {
-        return prevGrid.map((row, r) =>
-            row.map((node, c) =>
-                r === rowIndex && c === colIndex ? makeNode(r, c, Colors.WHITE) : node
-            )
-        );
-      });
+    if (!isRunning && (checkIfThereIsALightBlueNodeInGrid(grid))) {
+      // Set all the light blue and yellow nodes to white
+        setGrid(prevGrid => {
+            return prevGrid.map((row, r) =>
+                row.map((node, c) =>
+                    node.color === Colors.LIGHT_BLUE || node.color === Colors.YELLOW ? makeNode(r, c, Colors.WHITE) : node
+                )
+            );
+        });
     } else if (!isRunning) {
       // If the algorithm is not running and the clicked tile is not light blue or yellow, toggle between white and black
       setGrid(prevGrid => {
@@ -230,15 +292,57 @@ function InteractiveGrid() {
       <div className="container">
         <div className="column-20">
           <h1>Pathfinder</h1>
-          <select id="maze-solver">
-            <option value="">Select a maze solver</option>
-            <option value="dijkstra">Dijkstra's Algorithm</option>
-            <option value="a-star">A* Search</option>
-            <option value="greedy-best-first">Greedy Best-First Search</option>
-            <option value="breadth-first">Breadth-First Search</option>
-            <option value="depth-first">Depth-First Search</option>
+          <select id="maze-solver" onChange={(event) => {
+              switch(event.target.value) {
+                  case 'dijkstra':
+                      setMazeSolver('dijkstra');
+                      break;
+                  case 'a-star':
+                      setMazeSolver('a-star');
+                      break;
+                  case 'greedy-best-first':
+                      setMazeSolver('greedy-best-first');
+                      break;
+                  case 'breadth-first':
+                      setMazeSolver('breadth-first');
+                      break;
+                  case 'depth-first':
+                      setMazeSolver('depth-first');
+                      break;
+                  default:
+                      break;
+              }
+          }}>
+              <option value="">Select a maze solver</option>
+              <option value="dijkstra">Dijkstra's Algorithm</option>
+              <option value="a-star">A* Search</option>
+              <option value="greedy-best-first">Greedy Best-First Search</option>
+              <option value="breadth-first">Breadth-First Search</option>
+              <option value="depth-first">Depth-First Search</option>
           </select>
-          <select id="maze-generator">
+          <select id="maze-generator" onChange={
+            (event) => {
+              switch(event.target.value) {
+                case 'recursive-division':
+                  setMazeGenerator('recursive-division');
+                  break;
+                case 'random-walk':
+                  setMazeGenerator('random-walk');
+                  break;
+                case 'prim':
+                  setMazeGenerator('prim');
+                  break;
+                case 'kruskal':
+                  setMazeGenerator('kruskal');
+                  break;
+                case 'eller':
+                  setMazeGenerator('eller');
+                  break;
+                default:
+                  break;
+              }
+            }
+          }>
             <option value="">Select a maze generator</option>
             <option value="recursive-division">Recursive Division</option>
             <option value="random-walk">Random Walk</option>
@@ -253,11 +357,15 @@ function InteractiveGrid() {
           }>Clear Maze</button>
           <button id="run" onClick={
             () => {
-              breadthFirstSearch(grid, grid[2][2]);
-              // Once the algorithm is running, disable the ability to change the grid
-                setIsRunning(true);
-                // Once the algorithm is done running, enable the ability to change the grid
-    setIsRunning(false);
+                if (mazeSolver === 'breadth-first') {
+                  setIsRunning(true);
+                  breadthFirstSearch(grid, grid[2][2]);
+                  setIsRunning(false);
+                } else if (mazeSolver === 'a-star') {
+                    setIsRunning(true);
+                    aStarSearch(grid, grid[2][2]);
+                    setIsRunning(false);
+                }
             }
           }>Run</button>
         </div>
