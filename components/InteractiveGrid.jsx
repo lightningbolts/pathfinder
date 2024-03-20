@@ -152,7 +152,8 @@ function InteractiveGrid() {
   }
 
   const heuristic = (a, b) => {
-    return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
+    // return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
+    return Math.sqrt(Math.pow(a.row - b.row, 2) + Math.pow(a.col - b.col, 2));
   }
 
   const aStarSearch = (grid, start) => {
