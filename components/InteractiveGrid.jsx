@@ -178,7 +178,7 @@ function InteractiveGrid() {
         return;
       }
       for (const neighbor of getNeighbors(grid, currentNode)) {
-        let tentativeGScore = gScore[currentNode.row][currentNode.col] + 1;
+        let tentativeGScore = gScore[currentNode.row][currentNode.col];
         if (tentativeGScore < gScore[neighbor.row][neighbor.col]) {
           cameFrom[neighbor.row][neighbor.col] = currentNode;
           gScore[neighbor.row][neighbor.col] = tentativeGScore;
