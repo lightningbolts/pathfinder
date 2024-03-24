@@ -144,18 +144,32 @@ function InteractiveGrid() {
 
   const reconstructPath = (cameFrom, current) => {
     let path = [];
-    for (let at = current; at != null; at = cameFrom[at.row][at.col]) {
-      path.push(at);
+    for (let at = current; at != null; at = cameFrom[at.row] && cameFrom[at.row][at.col] ? cameFrom[at.row][at.col] : null) {
+      if (at) {
+        path.push(at);
+      }
     }
     path.reverse();
     return path;
   }
 
-  const heuristic = (a, b) => {
-    // return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
-    return Math.sqrt(Math.pow(a.row - b.row, 2) + Math.pow(a.col - b.col, 2));
+  const manhattanDistanceHeuristic = (a, b) => {
+    return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
   }
 
+  const euclideanDistanceHeuristic = (a, b) => {
+    return Math.sqrt((a.row - b.row) ** 2 + (a.col - b.col) ** 2);
+  }
+
+  const euclideanDistanceSquaredHeuristic = (a, b) => {
+    return (a.row - b.row) ** 2 + (a.col - b.col) ** 2;
+  }
+
+  const heuristic = euclideanDistanceHeuristic;
+
+  const weightFunction = (current, neighbor) => {
+    return 0.7;
+  }
   const aStarSearch = (grid, start) => {
     const visited = Array(grid.length).fill().map(() => Array(grid[0].length).fill(false));
     const cameFrom = Array(grid.length).fill().map(() => Array(grid[0].length).fill(null));
@@ -179,11 +193,11 @@ function InteractiveGrid() {
         return;
       }
       for (const neighbor of getNeighbors(grid, currentNode)) {
-        let tentativeGScore = gScore[currentNode.row][currentNode.col];
+        let tentativeGScore = gScore[currentNode.row][currentNode.col] + weightFunction(currentNode, neighbor);
         if (tentativeGScore < gScore[neighbor.row][neighbor.col]) {
           cameFrom[neighbor.row][neighbor.col] = currentNode;
           gScore[neighbor.row][neighbor.col] = tentativeGScore;
-          fScore[neighbor.row][neighbor.col] = gScore[neighbor.row][neighbor.col] + heuristic(neighbor, grid[size-3][size-3]);
+          fScore[neighbor.row][neighbor.col] = gScore[neighbor.row][neighbor.col] + heuristic(neighbor, grid[size - 3][size - 3]);
           if (!visited[neighbor.row][neighbor.col]) {
             priorityQueue.add(neighbor);
             visited[neighbor.row][neighbor.col] = true;
