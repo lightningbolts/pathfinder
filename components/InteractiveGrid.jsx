@@ -76,6 +76,23 @@ function InteractiveGrid() {
     });
   };
 
+  const displayBlackNode = (node) => {
+    if (!node) {
+      console.error('Undefined node passed to displayBlackNode function');
+      return;
+    }
+    setGrid(prevGrid => {
+      // Create a copy of the current grid
+      const newGrid = JSON.parse(JSON.stringify(prevGrid));
+      // Update the color of the specific node in the copied grid
+      if (newGrid[node.row][node.col].color !== Colors.RED && newGrid[node.row][node.col].color !== Colors.GREEN) {
+        newGrid[node.row][node.col] = makeNode(node.row, node.col, Colors.BLACK);
+      }
+      // Return the copied grid
+      return newGrid;
+    });
+  }
+
   const size = 50;
   // Render initial grid as a 2D array, with each node representing this data structure:
     // {
@@ -93,6 +110,8 @@ function InteractiveGrid() {
   }
   initialGrid[2][2] = makeNode(2, 2, Colors.RED) // start tile
   initialGrid[size-3][size-3] = makeNode(size-3, size-3, Colors.GREEN); // end tile
+  let start = initialGrid[2][2];
+  let end = initialGrid[size-3][size-3];
 
   const [grid, setGrid] = useState(initialGrid);
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -252,6 +271,10 @@ function InteractiveGrid() {
     }
   };
 
+  useEffect(() => {
+    render()
+  }, [grid]);
+
   const checkIfThereIsALightBlueNodeInGrid = (grid) => {
     for (let i = 0; i < grid.length; i++) {
       for (let j = 0; j < grid[0].length; j++) {
@@ -338,9 +361,6 @@ function InteractiveGrid() {
           <select id="maze-generator" onChange={
             (event) => {
               switch(event.target.value) {
-                case 'recursive-division':
-                  setMazeGenerator('recursive-division');
-                  break;
                 case 'random-walk':
                   setMazeGenerator('random-walk');
                   break;
@@ -359,7 +379,6 @@ function InteractiveGrid() {
             }
           }>
             <option value="">Select a maze generator</option>
-            <option value="recursive-division">Recursive Division</option>
             <option value="random-walk">Random Walk</option>
             <option value="prim">Prim's Algorithm</option>
             <option value="kruskal">Kruskal's Algorithm</option>
