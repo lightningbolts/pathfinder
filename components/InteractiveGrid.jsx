@@ -110,8 +110,6 @@ function InteractiveGrid() {
   }
   initialGrid[2][2] = makeNode(2, 2, Colors.RED) // start tile
   initialGrid[size-3][size-3] = makeNode(size-3, size-3, Colors.GREEN); // end tile
-  let start = initialGrid[2][2];
-  let end = initialGrid[size-3][size-3];
 
   const [grid, setGrid] = useState(initialGrid);
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -119,14 +117,16 @@ function InteractiveGrid() {
   const [isRunning, setIsRunning] = useState(false);
   const [mazeSolver, setMazeSolver] = useState('');
   const [mazeGenerator, setMazeGenerator] = useState('');
+  const [start, setStart] = useState(initialGrid[2][2]);
+  const [end, setEnd] = useState(initialGrid[size-3][size-3]);
 
   useEffect(() => {
     for (let i = 0; i < grid.length; i++) {
       for (let j = 0; j < grid[0].length; j++) {
         if (grid[i][j].color === Colors.RED) {
-          start = grid[i][j];
+          setStart(grid[i][j])
         } else if (grid[i][j].color === Colors.GREEN) {
-          end = grid[i][j];
+          setEnd(grid[i][j]);
         }
       }
     }
@@ -333,9 +333,9 @@ function InteractiveGrid() {
       newGrid[dragging.rowIndex][dragging.colIndex] = newGrid[rowIndex][colIndex];
       newGrid[rowIndex][colIndex] = temp;
       if (newGrid[rowIndex][colIndex].color === Colors.RED) {
-        start = newGrid[rowIndex][colIndex];
+        setStart(newGrid[rowIndex][colIndex]);
       } else if (newGrid[rowIndex][colIndex].color === Colors.GREEN) {
-        end = newGrid[rowIndex][colIndex];
+        setEnd(newGrid[rowIndex][colIndex]);
       }
       return newGrid;
     });
