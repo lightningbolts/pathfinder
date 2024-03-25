@@ -120,6 +120,17 @@ function InteractiveGrid() {
   const [mazeSolver, setMazeSolver] = useState('');
   const [mazeGenerator, setMazeGenerator] = useState('');
 
+  useEffect(() => {
+    for (let i = 0; i < grid.length; i++) {
+      for (let j = 0; j < grid[0].length; j++) {
+        if (grid[i][j].color === Colors.RED) {
+          start = grid[i][j];
+        } else if (grid[i][j].color === Colors.GREEN) {
+          end = grid[i][j];
+        }
+      }
+    }
+  }, [grid]);
   function render() {
     // console.log('Rendering grid');
     const grid = document.querySelector('.grid');
@@ -195,7 +206,7 @@ function InteractiveGrid() {
     const gScore = Array(grid.length).fill().map(() => Array(grid[0].length).fill(Infinity));
     const fScore = Array(grid.length).fill().map(() => Array(grid[0].length).fill(Infinity));
     gScore[start.row][start.col] = 0;
-    fScore[start.row][start.col] = heuristic(start, grid[size-3][size-3]);
+    fScore[start.row][start.col] = heuristic(start, end);
     const priorityQueue = new FastPriorityQueue((a, b) => fScore[a.row][a.col] < fScore[b.row][b.col]);
     priorityQueue.add(start);
     while (!priorityQueue.isEmpty()) {
@@ -216,7 +227,7 @@ function InteractiveGrid() {
         if (tentativeGScore < gScore[neighbor.row][neighbor.col]) {
           cameFrom[neighbor.row][neighbor.col] = currentNode;
           gScore[neighbor.row][neighbor.col] = tentativeGScore;
-          fScore[neighbor.row][neighbor.col] = gScore[neighbor.row][neighbor.col] + heuristic(neighbor, grid[size - 3][size - 3]);
+          fScore[neighbor.row][neighbor.col] = gScore[neighbor.row][neighbor.col] + heuristic(neighbor, end);
           if (!visited[neighbor.row][neighbor.col]) {
             priorityQueue.add(neighbor);
             visited[neighbor.row][neighbor.col] = true;
@@ -321,6 +332,11 @@ function InteractiveGrid() {
       const temp = newGrid[dragging.rowIndex][dragging.colIndex];
       newGrid[dragging.rowIndex][dragging.colIndex] = newGrid[rowIndex][colIndex];
       newGrid[rowIndex][colIndex] = temp;
+      if (newGrid[rowIndex][colIndex].color === Colors.RED) {
+        start = newGrid[rowIndex][colIndex];
+      } else if (newGrid[rowIndex][colIndex].color === Colors.GREEN) {
+        end = newGrid[rowIndex][colIndex];
+      }
       return newGrid;
     });
     setDragging(null);
