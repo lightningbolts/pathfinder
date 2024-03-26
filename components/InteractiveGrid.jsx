@@ -93,6 +93,23 @@ function InteractiveGrid() {
     });
   }
 
+  const displayWhiteNode = (node) => {
+    if (!node) {
+      console.error('Undefined node passed to displayWhiteNode function');
+      return;
+    }
+    setGrid(prevGrid => {
+      // Create a copy of the current grid
+      const newGrid = JSON.parse(JSON.stringify(prevGrid));
+      // Update the color of the specific node in the copied grid
+      if (newGrid[node.row][node.col].color !== Colors.RED && newGrid[node.row][node.col].color !== Colors.GREEN) {
+        newGrid[node.row][node.col] = makeNode(node.row, node.col, Colors.WHITE);
+      }
+      // Return the copied grid
+      return newGrid;
+    });
+  }
+
   const size = 50;
   // Render initial grid as a 2D array, with each node representing this data structure:
     // {
@@ -171,7 +188,6 @@ function InteractiveGrid() {
     }
     return neighbors;
   }
-
   const reconstructPath = (cameFrom, current) => {
     let path = [];
     for (let at = current; at != null; at = cameFrom[at.row] && cameFrom[at.row][at.col] ? cameFrom[at.row][at.col] : null) {
@@ -267,6 +283,120 @@ function InteractiveGrid() {
             setTimeout(() => {
               displayLightBlueNode(neighbor);
             }, 5);
+        }
+      }
+    }
+  }
+
+    const greedyBestFirstSearch = (grid, start) => {
+      const visited = Array(grid.length).fill().map(() => Array(grid[0].length).fill(false));
+      const cameFrom = Array(grid.length).fill().map(() => Array(grid[0].length).fill(null));
+      const gScore = Array(grid.length).fill().map(() => Array(grid[0].length).fill(Infinity));
+      const fScore = Array(grid.length).fill().map(() => Array(grid[0].length).fill(Infinity));
+      gScore[start.row][start.col] = 0;
+      fScore[start.row][start.col] = heuristic(start, end);
+      const priorityQueue = new FastPriorityQueue((a, b) => fScore[a.row][a.col] < fScore[b.row][b.col]);
+      priorityQueue.add(start);
+      while (!priorityQueue.isEmpty()) {
+        let currentNode = priorityQueue.poll();
+        if (grid[currentNode.row][currentNode.col].color === Colors.GREEN) {
+          console.log('Found the end tile');
+          let path = reconstructPath(cameFrom, currentNode);
+          // Wait until the path is reconstructed before displaying the yellow nodes
+          setTimeout(() => {
+            for (const node of path) {
+              displayYellowNode(node);
+            }
+          }, 5);
+          return;
+        }
+        for (const neighbor of getNeighbors(grid, currentNode)) {
+          let tentativeGScore = gScore[currentNode.row][currentNode.col];
+          if (tentativeGScore < gScore[neighbor.row][neighbor.col]) {
+            cameFrom[neighbor.row][neighbor.col] = currentNode;
+            gScore[neighbor.row][neighbor.col] = tentativeGScore;
+            fScore[neighbor.row][neighbor.col] = gScore[neighbor.row][neighbor.col] + heuristic(neighbor, end);
+            if (!visited[neighbor.row][neighbor.col]) {
+              priorityQueue.add(neighbor);
+              visited[neighbor.row][neighbor.col] = true;
+              // Wait 50ms before displaying the next light blue node
+              setTimeout(() => {
+                displayLightBlueNode(neighbor);
+              }, 5);
+            }
+          }
+        }
+      }
+    }
+
+  const depthFirstSearch = (grid, start) => {
+    let stack = [start];
+    let visited = Array(grid.length).fill().map(() => Array(grid[0].length).fill(false));
+    let prev = Array(grid.length).fill().map(() => Array(grid[0].length).fill(null));
+    visited[start.row][start.col] = true;
+    while (stack.length > 0) {
+      let currentNode = stack.pop();
+      if (grid[currentNode.row][currentNode.col].color === Colors.GREEN) {
+        console.log('Found the end tile');
+        let path = reconstructPath(prev, currentNode);
+        // Wait until the path is reconstructed before displaying the yellow nodes
+        setTimeout(() => {
+          for (const node of path) {
+            displayYellowNode(node);
+          }
+        }, 5);
+        return;
+      }
+      for (const neighbor of getNeighbors(grid, currentNode)) {
+        if (!visited[neighbor.row][neighbor.col] && grid[neighbor.row][neighbor.col].color !== Colors.BLACK) {
+          stack.push(neighbor);
+          visited[neighbor.row][neighbor.col] = true;
+          prev[neighbor.row][neighbor.col] = currentNode;
+            // Wait 50ms before displaying the next light blue node
+            setTimeout(() => {
+              displayLightBlueNode(neighbor);
+            }, 5);
+        }
+      }
+    }
+  }
+
+  const dijkstra = (grid, start) => {
+    const visited = Array(grid.length).fill().map(() => Array(grid[0].length).fill(false));
+    const cameFrom = Array(grid.length).fill().map(() => Array(grid[0].length).fill(null));
+    const gScore = Array(grid.length).fill().map(() => Array(grid[0].length).fill(Infinity));
+    const fScore = Array(grid.length).fill().map(() => Array(grid[0].length).fill(Infinity));
+    gScore[start.row][start.col] = 0;
+    fScore[start.row][start.col] = heuristic(start, end);
+    const priorityQueue = new FastPriorityQueue((a, b) => fScore[a.row][a.col] < fScore[b.row][b.col]);
+    priorityQueue.add(start);
+    while (!priorityQueue.isEmpty()) {
+      let currentNode = priorityQueue.poll();
+      if (grid[currentNode.row][currentNode.col].color === Colors.GREEN) {
+        console.log('Found the end tile');
+        let path = reconstructPath(cameFrom, currentNode);
+        // Wait until the path is reconstructed before displaying the yellow nodes
+        setTimeout(() => {
+          for (const node of path) {
+            displayYellowNode(node);
+          }
+        }, 5);
+        return;
+      }
+      for (const neighbor of getNeighbors(grid, currentNode)) {
+        let tentativeGScore = gScore[currentNode.row][currentNode.col] + 1;
+        if (tentativeGScore < gScore[neighbor.row][neighbor.col]) {
+          cameFrom[neighbor.row][neighbor.col] = currentNode;
+          gScore[neighbor.row][neighbor.col] = tentativeGScore;
+          fScore[neighbor.row][neighbor.col] = gScore[neighbor.row][neighbor.col] + heuristic(neighbor, end);
+          if (!visited[neighbor.row][neighbor.col]) {
+            priorityQueue.add(neighbor);
+            visited[neighbor.row][neighbor.col] = true;
+            // Wait 50ms before displaying the next light blue node
+            setTimeout(() => {
+              displayLightBlueNode(neighbor);
+            }, 5);
+          }
         }
       }
     }
@@ -374,32 +504,6 @@ function InteractiveGrid() {
               <option value="breadth-first">Breadth-First Search</option>
               <option value="depth-first">Depth-First Search</option>
           </select>
-          <select id="maze-generator" onChange={
-            (event) => {
-              switch(event.target.value) {
-                case 'random-walk':
-                  setMazeGenerator('random-walk');
-                  break;
-                case 'prim':
-                  setMazeGenerator('prim');
-                  break;
-                case 'kruskal':
-                  setMazeGenerator('kruskal');
-                  break;
-                case 'eller':
-                  setMazeGenerator('eller');
-                  break;
-                default:
-                  break;
-              }
-            }
-          }>
-            <option value="">Select a maze generator</option>
-            <option value="random-walk">Random Walk</option>
-            <option value="prim">Prim's Algorithm</option>
-            <option value="kruskal">Kruskal's Algorithm</option>
-            <option value="eller">Eller's Algorithm</option>
-          </select>
           <button id="clear-maze" onClick={
             () => {
               setGrid(initialGrid);
@@ -409,11 +513,23 @@ function InteractiveGrid() {
             () => {
                 if (mazeSolver === 'breadth-first') {
                   setIsRunning(true);
-                  breadthFirstSearch(grid, grid[2][2]);
+                  breadthFirstSearch(grid, start);
                   setIsRunning(false);
                 } else if (mazeSolver === 'a-star') {
                     setIsRunning(true);
-                    aStarSearch(grid, grid[2][2]);
+                    aStarSearch(grid, start);
+                    setIsRunning(false);
+                } else if (mazeSolver === 'greedy-best-first') {
+                    setIsRunning(true);
+                    greedyBestFirstSearch(grid, start);
+                    setIsRunning(false);
+                } else if (mazeSolver === 'depth-first') {
+                    setIsRunning(true);
+                    depthFirstSearch(grid, start);
+                    setIsRunning(false);
+                } else if (mazeSolver === 'dijkstra') {
+                    setIsRunning(true);
+                    dijkstra(grid, start);
                     setIsRunning(false);
                 }
             }

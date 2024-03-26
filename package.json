@@ -11,6 +11,7 @@
   "dependencies": {
     "fastpriorityqueue": "^0.7.4",
     "js-priority-queue": "^0.1.5",
+    "module": "^1.2.5",
     "next": "14.1.2",
     "react": "^18",
     "react-dom": "^18"
